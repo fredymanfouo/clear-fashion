@@ -1,7 +1,8 @@
 /* eslint-disable no-console, no-process-exit */
+const fs = require('fs');
 const dedicatedbrand = require('./eshops/dedicatedbrand');
-const montlimartbrand = require('./eshops/montlimartbrand');
-const circlesportswear = require('./eshops/circlesportswearbrand');
+const montlimart = require('./eshops/Montlimart');
+const circlesportswear = require('./eshops/circlesportswear');
 
 const eshops = [
   'https://www.dedicatedbrand.com/en/loadfilter',

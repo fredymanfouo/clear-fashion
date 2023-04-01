@@ -1,7 +1,12 @@
 const { connect } = require('http2');
 const {MongoClient} = require('mongodb');
 const fs = require('fs');
-
+module.exports = {
+    productsPushMongoDb,
+    fetchProducts,
+    fetchProductsByUuid,
+    getBrands
+}
 const sandbox = require('./sandbox');
 
 var MONGODB_URI = "";

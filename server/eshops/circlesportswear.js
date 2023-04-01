@@ -10,25 +10,26 @@ const { v5: uuidv5 } = require('uuid');
 const parse = data => {
   const $ = cheerio.load(data);
 
-  return $('.products-list .product-miniature')
+  return $('.product-grid .card')
     .map((i, element) => {
-      const link = $(element)
-        .find('.product-miniature__thumb-link')
+      const link = 'https://shop.circlesportswear.com' + $(element)
+        .find('.full-unstyled-link')
         .attr('href');
-      const brand = 'Montlimart';
+      const brand = 'Circle Sportswear';
       const price = parseInt(
         $(element)
-          .find('.price')
+          .find('.price__sale .money')
           .text()
+          .slice(1)
       );
       const name = $(element)
-        .find('.product-miniature__title')
+        .find('.card__inner .full-unstyled-link')
         .text()
         .trim()
         .replace(/\s/g, ' ');
-      const photo = $(element)
-        .find('.product-miniature__thumb img')
-        .attr('data-src');
+      const photo = 'https:' + $(element)
+        .find('.card__media img')
+        .attr('src');
       const uuid = uuidv5(link, uuidv5.URL);
       const released = new Date().toISOString().slice(0, 10);
 

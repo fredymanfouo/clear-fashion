@@ -153,6 +153,7 @@ const renderProducts = products => {
       <div class="product" id=${product.uuid}>
         <span>${product.brand}</span>
         <a href="${product.link}" target="_blank">${product.name}</a>
+        <img src="${product.photo}" alt="${product.name}" />
         <span>${product.price} </span><span id="${product.uuid}-fav">`
       + ((JSON.parse(localStorage.getItem("favorites")) || []).includes(product.uuid) ? `😻😻 <button onclick=deleteToFavorite("` + product.uuid + `")>Delete from favorite</button>` : `<button onclick=addToFavorite(currentProducts[${i}].uuid)>click here to favorite</button>`) + `
       </span></div>

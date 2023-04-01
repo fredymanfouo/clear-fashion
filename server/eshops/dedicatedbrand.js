@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const { v5: uuidv5 } = require('uuid');
 
 /**
  * Parse webpage e-shop
@@ -9,26 +10,29 @@ const cheerio = require('cheerio');
 const parse = data => {
   const $ = cheerio.load(data);
 
-  return $('#filterItems .productList')
+  return $('.productList-container .productList')
     .map((i, element) => {
-      const image = $(element)
-        .find('.productList-image img')[0]
-        .attribs['data-src'];
-      const link = "https://www.dedicatedbrand.com" + $(element)
+      const link = 'https://www.dedicatedbrand.com' + $(element)
         .find('.productList-link')
         .attr('href');
+      const brand = 'DEDICATED';
+      const price = parseInt(
+        $(element)
+          .find('.productList-price')
+          .text()
+      );
       const name = $(element)
         .find('.productList-title')
         .text()
         .trim()
         .replace(/\s/g, ' ');
-      const price = parseFloat(
-        $(element)
-          .find('.productList-price')
-          .text()
-      );
-      const brand = "Dedicated";
-      return {image,link,name,price,brand}
+      const photo = $(element)
+        .find('.productList-image img')
+        .attr('data-src');
+      const uuid = uuidv5(link, uuidv5.URL);
+      const released = new Date().toISOString().slice(0, 10);
+
+      return {link, brand, price, name, photo, uuid, released};
     })
     .get();
 };
@@ -56,26 +60,31 @@ module.exports.scrape = async url => {
     return null;
   }
 };
-module.exports.getProducts = async () => {
+
+/**
+ * Fetch all the products for a given api url
+ * @param  {[type]}  url
+ * @return {Array|null}
+ */
+module.exports.fetchProducts = async url => {
   try {
-    const response = await fetch("https://www.dedicatedbrand.com/en/loadfilter");
+    const response = await fetch(url);
 
     if (response.ok) {
       const body = await response.json();
-      const products = body['products'].filter(
-        data => Object.keys(data).length > 0
-      );
-      return products.map(
-        function(data) {
-          const image = data['image'][0];
-          const link = "https://www.dedicatedbrand.com/en/" + data['canonicalUri'];
-          const name = data['name'];
-          const price = data['price']['priceAsNumber'];
-          const brand = "Dedicated";
-          
-          return {image, link, name, price, brand};
-        }
-      );
+      const products = body.products.filter(element => element['canonicalUri']);
+
+      return products.map((element) => {
+        const link = 'https://www.dedicatedbrand.com/en/' + element['canonicalUri'];
+        const brand = 'DEDICATED';
+        const price = element['price']['priceAsNumber'];
+        const name = element['name'];
+        const photo = element['image'][0];
+        const uuid = uuidv5(link, uuidv5.URL);
+        const released = new Date().toISOString().slice(0, 10);
+
+        return {link, brand, price, name, photo, uuid, released};
+      });
     }
 
     console.error(response);
@@ -85,4 +94,4 @@ module.exports.getProducts = async () => {
     console.error(error);
     return null;
   }
-}
+};
