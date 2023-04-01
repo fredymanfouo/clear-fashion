@@ -1,51 +1,38 @@
-const { connect } = require('http2');
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const fs = require('fs');
+
 module.exports = {
-    productsPushMongoDb,
     fetchProducts,
     fetchProductsByUuid,
     getBrands
 }
-const sandbox = require('./sandbox');
 
-var MONGODB_URI = "";
+const MONGODB_URI = 'mongodb+srv://fredyjr:pjRlspq60Qn2sspR@cluster0.5s85q7w.mongodb.net?retryWrites=true&w=majority';
 const MONGODB_DB_NAME = 'clearfashion';
-var client, db, collection;
+const PRODUCTS_COLLECTION_NAME = 'products';
 
-async function connectMongoDb(connexion = "none"){
-    if(connexion == "none") MONGODB_URI = process.env.mongoDB;
-    else MONGODB_URI = connexion;
-    console.log('Connecting to MongoDB ...');
-    client = await MongoClient.connect(MONGODB_URI, {'useNewUrlParser': true});
-    db =  client.db(MONGODB_DB_NAME)
-    collection = db.collection('products');
+async function connectToDatabase() {
+  const client = await MongoClient.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+  return client.db(MONGODB_DB_NAME);
 }
 
-async function productsPushMongoDb(connexion){
-    await connectMongoDb(connexion);
-    console.log('Pushing new products to MongoDB ...');
-    let products = await sandbox.sandbox();
-    products.map(product => {
-        product._id = product.uuid;
-        delete product.uuid;
-    });
-    const alredyExist = await collection.find({}).toArray();
-    products = products.filter(product => !alredyExist.some(product2 => product2._id == product._id));
-    if(products.length != 0)
-    {
-        const result = await collection.insertMany(products);
-        console.log(result);
-    }
-    else
-    {
-        console.log("No new products");
-    }
-    process.exit(0);
+async function createCollection(db) {
+  const collection = await db.createCollection(PRODUCTS_COLLECTION_NAME);
+  console.log(`Collection "${PRODUCTS_COLLECTION_NAME}" created.`);
+  return collection;
+}
+
+async function insertProducts(collection) {
+  const products = JSON.parse(fs.readFileSync('products.json'));
+
+  await collection.deleteMany({});
+  const result = await collection.insertMany(products);
+  console.log(`${result.insertedCount} products inserted.`);
 }
 
 async function fetchProducts(brand = null, lessThan = null, sortedByPrice = false, sortedByDate = false, scrapedLessThanTwoWeeksAgo = false){
-    await connectMongoDb();
+    const db = await connectToDatabase();
+    const collection = db.collection(PRODUCTS_COLLECTION_NAME);
     console.log('Fetching products from MongoDB ...');
     var result = "none";
     var query = {};
@@ -65,7 +52,8 @@ async function fetchProducts(brand = null, lessThan = null, sortedByPrice = fals
 }
 
 async function fetchProductsByUuid(uuid){
-    await connectMongoDb();
+    const db = await connectToDatabase();
+    const collection = db.collection(PRODUCTS_COLLECTION_NAME);
     console.log('Fetching products from MongoDB ...');
     var result = "none";
     result = await collection.find({_id: uuid}).toArray();
@@ -73,18 +61,24 @@ async function fetchProductsByUuid(uuid){
 }
 
 async function getBrands(){
-    await connectMongoDb();
+    const db = await connectToDatabase();
+    const collection = db.collection(PRODUCTS_COLLECTION_NAME);
     console.log('Fetching brands from MongoDB ...');
     var result = "none";
     result = await collection.distinct("brand");
     return result;
 }
 
-module.exports = {
-    productsPushMongoDb,
-    fetchProducts,
-    fetchProductsByUuid,
-    getBrands
-}
-//productsPushMongoDb();
-//fetchProducts("Dedicated", 10 ,true, false, false);//brand, lessThan, sortedByPrice, sortedByDate, scrapedLessThanTwoWeeksAgo
+async function main() {
+    const db = await connectToDatabase();
+    //await createCollection(db);
+    const collection = db.collection(PRODUCTS_COLLECTION_NAME);
+    await insertProducts(collection);
+    console.log('Done.');
+    process.exit(0);
+  }
+
+/*main().catch(error => {
+  console.error(error);
+  process.exit(1);
+});*/

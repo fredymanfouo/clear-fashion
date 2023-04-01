@@ -57,8 +57,11 @@ const setCurrentProducts = ({result, meta}) => {
  */
 const fetchProducts = async (page = 1, size = 12, brand = "all", sortBy = "price-asc", filter = [false, false, false]) => {
   try {
+    /*const response = await fetch(
+      'https://server-rouge-ten.vercel.app/products/search?limit=9999' + (brand !== "all" ? `&brand=${brand}` : "")
+    );*/
     const response = await fetch(
-      `https://clear-fashion-api.vercel.app?size=999` + (brand !== "all" ? `&brand=${brand}` : "")
+      'https://server-rouge-ten.vercel.app/'
     );
     const body = await response.json();
 
@@ -67,7 +70,7 @@ const fetchProducts = async (page = 1, size = 12, brand = "all", sortBy = "price
       return {currentProducts, currentPagination};
     }
     var result = body.data.result;
-    
+    result = brand !== "all" ? result.filter(product => product.brand === brand) : result;
     // filters
     if(filter[0]) {
       result = result.filter(product => product.price < 50);
@@ -238,7 +241,7 @@ const render = (products, pagination) => {
 async function fetchBrands() {
   try {
     const response = await fetch(
-      'https://clear-fashion-api.vercel.app/brands'
+      'https://server-rouge-ten.vercel.app/brands'
     );
     const body = await response.json();
 
